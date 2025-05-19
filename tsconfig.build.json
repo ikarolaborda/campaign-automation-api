@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true
+  },
+  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"],
+  "include": [
+    "src/**/*.entity.ts",
+    "src/**/*.dto.ts",
+    "src/**/*.controller.ts",
+    "src/**/*.service.ts",
+    "src/**/*.module.ts"
+  ]
+}
