@@ -4,6 +4,7 @@ import { CampaignService } from '../../../src/campaign/services/campaign.service
 import { ICampaignRepository } from '../../../src/campaign/contracts/campaign-repository.interface';
 import { IUserService } from '../../../src/user/contracts/user-service.interface';
 import { IMessagingService } from '../../../src/messaging/contracts/messaging-service.interface';
+import { EmailQueueService } from '../../../src/queue/email-queue.service';
 import { Campaign } from '../../../src/campaign/entities/campaign.entity';
 import { CreateCampaignDto } from '../../../src/campaign/dto/create-campaign.dto';
 import { UpdateCampaignDto } from '../../../src/campaign/dto/update-campaign.dto';
@@ -14,6 +15,7 @@ describe('CampaignService', () => {
   let campaignRepository: jest.Mocked<ICampaignRepository>;
   let userService: jest.Mocked<IUserService>;
   let messagingService: jest.Mocked<IMessagingService>;
+  let emailQueueService: jest.Mocked<EmailQueueService>;
 
   const mockCampaign: Campaign = {
     id: 'test-campaign-id',
@@ -55,6 +57,11 @@ describe('CampaignService', () => {
       sendCampaignMessages: jest.fn(),
     };
 
+    const mockEmailQueueService = {
+      queueCampaignNotification: jest.fn().mockResolvedValue(true),
+      queueStatusNotification: jest.fn().mockResolvedValue(true),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CampaignService,
@@ -70,6 +77,10 @@ describe('CampaignService', () => {
           provide: 'IMessagingService',
           useValue: mockMessagingService,
         },
+        {
+          provide: EmailQueueService,
+          useValue: mockEmailQueueService,
+        },
       ],
     }).compile();
 
@@ -77,6 +88,7 @@ describe('CampaignService', () => {
     campaignRepository = module.get('ICampaignRepository');
     userService = module.get('IUserService');
     messagingService = module.get('IMessagingService');
+    emailQueueService = module.get(EmailQueueService);
   });
 
   it('should be defined', () => {
@@ -116,7 +128,52 @@ describe('CampaignService', () => {
   });
 
   describe('create', () => {
-    it('should create a new campaign', async () => {
+    it('should create a new campaign and queue notification if active', async () => {
+      const createCampaignDto: CreateCampaignDto = {
+        name: 'Test Campaign',
+        targetAudience: {
+          ageRange: { min: 25, max: 45 },
+          countries: ['US', 'CA'],
+        },
+        messageTemplate: 'Hello {name}!',
+        isActive: true,
+      };
+
+      campaignRepository.create.mockResolvedValue(mockCampaign);
+
+      const result = await service.create(createCampaignDto);
+
+      expect(result).toEqual(mockCampaign);
+      expect(campaignRepository.create).toHaveBeenCalledWith(createCampaignDto);
+      expect(emailQueueService.queueStatusNotification).toHaveBeenCalledWith({
+        email: 'admin@campaignhub.com',
+        campaignName: mockCampaign.name,
+        status: 'activated',
+      }, 10);
+    });
+
+    it('should create a new campaign without notification if inactive', async () => {
+      const createCampaignDto: CreateCampaignDto = {
+        name: 'Test Campaign',
+        targetAudience: {
+          ageRange: { min: 25, max: 45 },
+          countries: ['US', 'CA'],
+        },
+        messageTemplate: 'Hello {name}!',
+        isActive: false,
+      };
+
+      const inactiveCampaign = { ...mockCampaign, isActive: false };
+      campaignRepository.create.mockResolvedValue(inactiveCampaign);
+
+      const result = await service.create(createCampaignDto);
+
+      expect(result).toEqual(inactiveCampaign);
+      expect(campaignRepository.create).toHaveBeenCalledWith(createCampaignDto);
+      expect(emailQueueService.queueStatusNotification).not.toHaveBeenCalled();
+    });
+
+    it('should create a new campaign without notification if isActive is undefined', async () => {
       const createCampaignDto: CreateCampaignDto = {
         name: 'Test Campaign',
         targetAudience: {
@@ -126,17 +183,19 @@ describe('CampaignService', () => {
         messageTemplate: 'Hello {name}!',
       };
 
-      campaignRepository.create.mockResolvedValue(mockCampaign);
+      const inactiveCampaign = { ...mockCampaign, isActive: false };
+      campaignRepository.create.mockResolvedValue(inactiveCampaign);
 
       const result = await service.create(createCampaignDto);
 
-      expect(result).toEqual(mockCampaign);
+      expect(result).toEqual(inactiveCampaign);
       expect(campaignRepository.create).toHaveBeenCalledWith(createCampaignDto);
+      expect(emailQueueService.queueStatusNotification).not.toHaveBeenCalled();
     });
   });
 
   describe('update', () => {
-    it('should update a campaign', async () => {
+    it('should update a campaign without status change', async () => {
       const updateCampaignDto: UpdateCampaignDto = {
         name: 'Updated Campaign Name',
       };
@@ -155,6 +214,36 @@ describe('CampaignService', () => {
         'test-campaign-id',
         updateCampaignDto,
       );
+      expect(emailQueueService.queueStatusNotification).not.toHaveBeenCalled();
+    });
+
+    it('should update a campaign and queue notification on status change', async () => {
+      const updateCampaignDto: UpdateCampaignDto = {
+        isActive: false,
+      };
+
+      const matchingUsers = [mockUser];
+      campaignRepository.findById.mockResolvedValue(mockCampaign);
+      campaignRepository.update.mockResolvedValue({
+        ...mockCampaign,
+        ...updateCampaignDto,
+      });
+      userService.findMatchingUsers.mockResolvedValue(matchingUsers);
+
+      const result = await service.update('test-campaign-id', updateCampaignDto);
+
+      expect(result).toEqual({ ...mockCampaign, ...updateCampaignDto });
+      expect(emailQueueService.queueStatusNotification).toHaveBeenCalledWith({
+        email: 'admin@campaignhub.com',
+        campaignName: mockCampaign.name,
+        status: 'paused',
+        statistics: {
+          totalUsers: 1,
+          messagesSent: 1,
+          messagesDelivered: 1,
+          messagesOpened: 1,
+        }
+      }, 10);
     });
 
     it('should throw NotFoundException when campaign to update is not found', async () => {
@@ -223,7 +312,7 @@ describe('CampaignService', () => {
   });
 
   describe('sendCampaign', () => {
-    it('should send campaign to matching users', async () => {
+    it('should send campaign to matching users and queue notifications', async () => {
       const matchingUsers = [mockUser];
       campaignRepository.findById.mockResolvedValue(mockCampaign);
       userService.findMatchingUsers.mockResolvedValue(matchingUsers);
@@ -246,6 +335,29 @@ describe('CampaignService', () => {
         mockCampaign,
         matchingUsers,
       );
+
+      // Check that campaign notifications were queued for each user
+      expect(emailQueueService.queueCampaignNotification).toHaveBeenCalledWith({
+        campaignId: mockCampaign.id,
+        campaignName: mockCampaign.name,
+        userEmail: mockUser.email,
+        userName: mockUser.name,
+        messageTemplate: mockCampaign.messageTemplate,
+        userCountry: mockUser.country,
+      }, 5);
+
+      // Check that completion notification was queued
+      expect(emailQueueService.queueStatusNotification).toHaveBeenCalledWith({
+        email: 'admin@campaignhub.com',
+        campaignName: mockCampaign.name,
+        status: 'completed',
+        statistics: {
+          totalUsers: 1,
+          messagesSent: 1,
+          messagesDelivered: 1,
+          messagesOpened: 1,
+        }
+      }, 10);
     });
 
     it('should throw NotFoundException when campaign is not found', async () => {

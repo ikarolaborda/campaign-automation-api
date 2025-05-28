@@ -6,12 +6,14 @@ import { CampaignService } from './services/campaign.service';
 import { CampaignRepository } from './repositories/campaign.repository';
 import { UserModule } from '../user/user.module';
 import { MessagingModule } from '../messaging/messaging.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Campaign]),
     UserModule,
     MessagingModule,
+    EmailModule,
   ],
   controllers: [CampaignController],
   providers: [

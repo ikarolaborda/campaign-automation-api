@@ -14,15 +14,18 @@ This project follows clean architecture principles with:
 
 ## 🚀 Features
 
-- **Campaign Management**: Create, read, update, delete campaigns with target audience filtering
-- **User Data Ingestion**: Upload user data via CSV or JSON files
-- **Audience Targeting**: Filter users by age range and country
-- **Campaign Statistics**: View detailed campaign metrics
-- **Message Simulation**: Simulate sending campaigns to matching users
-- **API Documentation**: Swagger/OpenAPI documentation
-- **Docker Support**: Full containerization with Docker Compose
-- **Comprehensive Testing**: 95%+ test coverage
-- **Type Safety**: Strong TypeScript typing throughout
+- ✅ **Campaign Management**: Create, update, delete, and manage marketing campaigns
+- ✅ **Target Audience Filtering**: Filter users by age range and country
+- ✅ **User Data Management**: Upload user data via CSV/JSON files
+- ✅ **Campaign Statistics**: Real-time campaign performance metrics
+- ✅ **Message Simulation**: Simulate campaign message delivery with realistic metrics
+- ✅ **Asynchronous Email Notifications**: Queue-based email system using RabbitMQ
+- ✅ **Email Testing**: MailHog integration for email testing in development
+- ✅ **Health Monitoring**: Comprehensive health checks for all services
+- ✅ **API Documentation**: Interactive Swagger/OpenAPI documentation
+- ✅ **High Test Coverage**: 95%+ test coverage with comprehensive test suite
+- ✅ **Docker Support**: Full containerization with Docker Compose
+- ✅ **Clean Architecture**: Modular design with dependency injection
 
 ## 📋 Prerequisites
 
@@ -61,7 +64,8 @@ This project follows clean architecture principles with:
    - **Frontend**: http://localhost:3000
    - **Backend API**: http://localhost:3001
    - **Swagger Docs**: http://localhost:3001/api/docs
-   - **RabbitMQ Management**: http://localhost:15672 (admin/admin)
+   - **RabbitMQ Management**: http://localhost:15672 (guest/guest)
+   - **MailHog Web UI**: http://localhost:8025 (email testing)
 
 ### Option 2: Local Development Setup
 
@@ -135,6 +139,19 @@ Visit http://localhost:3001/api/docs for interactive API documentation.
 #### Users
 - `POST /api/users/upload` - Upload user data (CSV/JSON)
 
+#### Email Notifications
+- `POST /api/email/test` - Send a test email directly
+- `POST /api/email/test-queue` - Queue a test campaign notification
+- `POST /api/email/test-status` - Queue a test status notification
+- `GET /api/email/queue-status` - Get email queue status
+
+#### Health Checks
+- `GET /api/health` - Basic health check
+- `GET /api/health/db` - Database connectivity check
+- `GET /api/health/email` - Email service connectivity check
+- `GET /api/health/queue` - Email queue status check
+- `GET /api/health/full` - Full system health check
+
 ### Example API Usage
 
 #### Create a Campaign
@@ -198,6 +215,7 @@ docker/               # Docker configurations
 - **Backend Framework**: NestJS
 - **Database**: PostgreSQL with TypeORM
 - **Message Queue**: RabbitMQ
+- **Email Service**: Nodemailer with MailHog (development)
 - **Validation**: class-validator, class-transformer
 - **Documentation**: Swagger/OpenAPI
 - **Testing**: Jest with comprehensive coverage
@@ -290,7 +308,7 @@ The application includes health check endpoints:
 
 ## 📝 Development Time
 
-**Total Development Time**: ~6 hours
+**Total Development Time**: >6 hours
 - Initial setup and architecture: 1 hour
 - Core features implementation: 3 hours
 - Testing and validation: 1.5 hours

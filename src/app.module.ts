@@ -6,6 +6,7 @@ import { CampaignModule } from './campaign/campaign.module';
 import { UserModule } from './user/user.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { HealthModule } from './health/health.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { HealthModule } from './health/health.module';
     UserModule,
     MessagingModule,
     HealthModule,
+    EmailModule,
   ],
 })
 export class AppModule {}

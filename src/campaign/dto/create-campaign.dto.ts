@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsObject, IsArray, IsInt, Min, Max, ArrayMinSize, ValidateNested } from 'class-validator';
+import { IsNotEmpty, IsString, IsObject, IsArray, IsInt, Min, Max, ArrayMinSize, ValidateNested, IsOptional, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -47,4 +47,14 @@ export class CreateCampaignDto {
   @IsNotEmpty()
   @IsString()
   messageTemplate: string;
+
+  @ApiProperty({ 
+    example: true, 
+    description: 'Whether the campaign is active',
+    required: false,
+    default: false
+  })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
