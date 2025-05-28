@@ -1,26 +1,29 @@
 # Build stage
 FROM node:22-alpine AS builder
 
-# Install build dependencies
-RUN apk add --no-cache python3 make g++
+# Install git and build dependencies
+RUN apk add --no-cache git python3 make g++
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files for backend
 COPY package*.json ./
 COPY tsconfig*.json ./
 
-# Install all dependencies (including dev dependencies for build)
+# Install backend dependencies
 RUN npm ci --silent && npm cache clean --force
 
-# Copy source code
+# Copy backend source code
 COPY src ./src
 
-# Build the application
+# Build the backend
 RUN npm run build
 
 # Production stage
 FROM node:22-alpine AS production
+
+# Install git for runtime operations if needed
+RUN apk add --no-cache git
 
 # Create app directory and user for security
 RUN addgroup -g 1001 -S nodejs && \
@@ -34,17 +37,20 @@ COPY package*.json ./
 # Install only production dependencies
 RUN npm ci --only=production --silent && npm cache clean --force
 
-# Copy built application from builder stage
+# Copy built backend from builder stage
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
+
+# Copy any additional configuration files
+COPY --chown=nestjs:nodejs .env* ./
 
 # Switch to non-root user
 USER nestjs
 
-# Expose the correct port
+# Expose backend port
 EXPOSE 3001
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+# Health check for backend
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "const http = require('http'); \
     const options = { \
       host: 'localhost', \
@@ -59,5 +65,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     req.on('error', () => process.exit(1)); \
     req.end();"
 
-# Start the application
+# Start the backend application
 CMD ["node", "dist/main.js"]

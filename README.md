@@ -26,7 +26,7 @@ This project follows clean architecture principles with:
 
 ## 📋 Prerequisites
 
-- Node.js 18+ 
+- Node.js 20+ 
 - PostgreSQL 13+
 - RabbitMQ 3.8+
 - Docker & Docker Compose (optional)
@@ -37,9 +37,14 @@ This project follows clean architecture principles with:
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/ikarolaborda/campaign-automation-api
    cd campaign-automation-api
    ```
+
+1.1. **Clone the frontend**
+ ```bash
+    git clone https://github.com/ikarolaborda/campaign-automation-frontend
+ ```
 
 2. **Create environment file**
    ```bash
@@ -49,13 +54,14 @@ This project follows clean architecture principles with:
 
 3. **Start with Docker Compose**
    ```bash
-   docker compose --env-file .env up -d
+   docker compose --env-file .env up --build -d
    ```
 
-4. **The API will be available at:**
-   - API: http://localhost:3001
-   - Swagger Docs: http://localhost:3001/api/docs
-   - RabbitMQ Management: http://localhost:15672 (admin/admin)
+4. **Access the applications:**
+   - **Frontend**: http://localhost:3000
+   - **Backend API**: http://localhost:3001
+   - **Swagger Docs**: http://localhost:3001/api/docs
+   - **RabbitMQ Management**: http://localhost:15672 (admin/admin)
 
 ### Option 2: Local Development Setup
 
@@ -70,7 +76,7 @@ This project follows clean architecture principles with:
    docker-compose up postgres rabbitmq -d
    ```
 
-3. **Set up environment variables**
+3. **Set up environment variables (Optional, If you don't want to use the provided .env.example)**
    Create a `.env` file with the following variables:
    ```env
    NODE_ENV=development
@@ -85,16 +91,7 @@ This project follows clean architecture principles with:
    RABBITMQ_USER=admin
    RABBITMQ_PASS=admin
    ```
-
-4. **Start the application**
-   ```bash
-   # Development mode
-   npm run start:dev
    
-   # Production mode
-   npm run build
-   npm run start:prod
-   ```
 
 ## 🧪 Testing
 

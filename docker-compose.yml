@@ -36,3 +36,15 @@ services:
         condition: service_started
     ports:
       - 3001:3001
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ./Dockerfile
+    container_name: frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+    depends_on:
+      - backend
+    ports:
+      - 3000:3000
