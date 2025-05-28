@@ -13,7 +13,7 @@ export interface EmailJob {
 export interface StatusNotificationData {
   email: string;
   campaignName: string;
-  status: 'activated' | 'paused' | 'completed';
+  status: 'activated' | 'paused' | 'completed' | 'created' | 'deleted';
   statistics?: {
     totalUsers: number;
     messagesSent: number;

@@ -36,30 +36,33 @@ export class CampaignService implements ICampaignService {
 
   async create(createCampaignDto: CreateCampaignDto): Promise<Campaign> {
     const campaign = await this.campaignRepository.create(createCampaignDto);
-    
-    // Queue notification for campaign creation
+
+    await this.emailQueueService.queueStatusNotification({
+      email: 'admin@campaignhub.com',
+      campaignName: campaign.name,
+      status: 'created',
+    }, 10);
+
     if (campaign.isActive) {
       await this.emailQueueService.queueStatusNotification({
-        email: 'admin@campaignhub.com', // You might want to get this from campaign owner
+        email: 'admin@campaignhub.com',
         campaignName: campaign.name,
         status: 'activated',
-      }, 10); // High priority for status notifications
+      }, 10);
     }
     
     return campaign;
   }
 
   async update(id: string, updateCampaignDto: UpdateCampaignDto): Promise<Campaign> {
-    // Get the original campaign to compare status changes
     const originalCampaign = await this.findById(id);
     const updatedCampaign = await this.campaignRepository.update(id, updateCampaignDto);
-    
-    // Send status notification if isActive changed
+
     if ('isActive' in updateCampaignDto && updateCampaignDto.isActive !== originalCampaign.isActive) {
       const stats = await this.getStats(id);
       
       await this.emailQueueService.queueStatusNotification({
-        email: 'admin@campaignhub.com', // You might want to get this from campaign owner
+        email: 'admin@campaignhub.com',
         campaignName: updatedCampaign.name,
         status: updateCampaignDto.isActive ? 'activated' : 'paused',
         statistics: {
@@ -68,14 +71,21 @@ export class CampaignService implements ICampaignService {
           messagesDelivered: stats.messagesDelivered,
           messagesOpened: stats.messagesOpened,
         }
-      }, 10); // High priority for status notifications
+      }, 10);
     }
     
     return updatedCampaign;
   }
 
   async delete(id: string): Promise<void> {
-    await this.findById(id);
+    const campaign = await this.findById(id);
+
+    await this.emailQueueService.queueStatusNotification({
+      email: 'admin@campaignhub.com',
+      campaignName: campaign.name,
+      status: 'deleted',
+    }, 10);
+    
     await this.campaignRepository.delete(id);
   }
 
@@ -92,8 +102,8 @@ export class CampaignService implements ICampaignService {
       campaignName: campaign.name,
       totalMatchingUsers: matchingUsers.length,
       messagesSent: matchingUsers.length,
-      messagesDelivered: Math.round(matchingUsers.length * 0.95), // 95% delivery rate
-      messagesOpened: Math.round(matchingUsers.length * 0.7),    // 70% open rate
+      messagesDelivered: Math.round(matchingUsers.length * 0.95),
+      messagesOpened: Math.round(matchingUsers.length * 0.7),
     };
   }
 
@@ -115,7 +125,6 @@ export class CampaignService implements ICampaignService {
       matchingUsers,
     );
 
-    // Queue campaign notifications for all matching users
     for (const user of matchingUsers) {
       await this.emailQueueService.queueCampaignNotification({
         campaignId: campaign.id,
@@ -124,10 +133,9 @@ export class CampaignService implements ICampaignService {
         userName: user.name,
         messageTemplate: campaign.messageTemplate,
         userCountry: user.country,
-      }, 5); // Normal priority for campaign notifications
+      }, 5);
     }
 
-    // Queue completion notification for admin
     const stats = await this.getStats(id);
     await this.emailQueueService.queueStatusNotification({
       email: 'admin@campaignhub.com',
@@ -139,7 +147,7 @@ export class CampaignService implements ICampaignService {
         messagesDelivered: stats.messagesDelivered,
         messagesOpened: stats.messagesOpened,
       }
-    }, 10); // High priority for completion notifications
+    }, 10);
 
     return {
       status: 'processing',

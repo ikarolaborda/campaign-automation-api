@@ -28,12 +28,11 @@ export class EmailService {
   }
 
   private createTransporter() {
-    // Configure for MailHog in development
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'mailhog',
       port: parseInt(process.env.SMTP_PORT || '1025'),
-      secure: false, // MailHog doesn't use TLS
-      auth: undefined, // MailHog doesn't require authentication
+      secure: false,
+      auth: undefined,
       tls: {
         rejectUnauthorized: false
       }
@@ -92,7 +91,7 @@ export class EmailService {
   async sendCampaignStatusNotification(
     email: string,
     campaignName: string,
-    status: 'activated' | 'paused' | 'completed',
+    status: 'activated' | 'paused' | 'completed' | 'created' | 'deleted',
     statistics?: {
       totalUsers: number;
       messagesSent: number;
@@ -104,6 +103,8 @@ export class EmailService {
       activated: 'Your campaign has been activated and is now running.',
       paused: 'Your campaign has been paused.',
       completed: 'Your campaign has completed successfully.',
+      created: 'A new campaign has been created.',
+      deleted: 'Your campaign has been deleted.',
     };
 
     let htmlContent = `
