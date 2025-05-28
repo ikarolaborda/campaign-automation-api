@@ -49,7 +49,7 @@ This project follows clean architecture principles with:
 
 3. **Start with Docker Compose**
    ```bash
-   docker-compose up -d
+   docker compose --env-file .env up -d
    ```
 
 4. **The API will be available at:**
