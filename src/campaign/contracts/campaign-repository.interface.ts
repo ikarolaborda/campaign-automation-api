@@ -4,7 +4,7 @@ import { UpdateCampaignDto } from '../dto/update-campaign.dto';
 
 export interface ICampaignRepository {
   findAll(): Promise<Campaign[]>;
-  findById(id: string): Promise<Campaign>;
+  findById(id: string): Promise<Campaign | null>;
   create(createCampaignDto: CreateCampaignDto): Promise<Campaign>;
   update(id: string, updateCampaignDto: UpdateCampaignDto): Promise<Campaign>;
   delete(id: string): Promise<void>;

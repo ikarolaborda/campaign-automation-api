@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Campaign } from '../entities/campaign.entity';
@@ -19,8 +19,8 @@ export class CampaignRepository implements ICampaignRepository {
     });
   }
 
-  async findById(id: string): Promise<Campaign> {
-    return this.campaignRepository.findOneOrFail({ where: { id } });
+  async findById(id: string): Promise<Campaign | null> {
+    return this.campaignRepository.findOne({ where: { id } });
   }
 
   async create(createCampaignDto: CreateCampaignDto): Promise<Campaign> {
@@ -30,7 +30,11 @@ export class CampaignRepository implements ICampaignRepository {
 
   async update(id: string, updateCampaignDto: UpdateCampaignDto): Promise<Campaign> {
     await this.campaignRepository.update(id, updateCampaignDto);
-    return this.findById(id);
+    const updatedCampaign = await this.findById(id);
+    if (!updatedCampaign) {
+      throw new NotFoundException(`Campaign with ID ${id} not found after update`);
+    }
+    return updatedCampaign;
   }
 
   async delete(id: string): Promise<void> {
