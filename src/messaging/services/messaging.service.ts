@@ -32,7 +32,6 @@ export class MessagingService implements IMessagingService {
     const { campaign, user } = data;
     const message = this.formatMessage(campaign.messageTemplate, user);
     this.logger.debug(`Formatted message for ${user.email}: ${message}`);
-    // simulate async delivery
     await new Promise(res => setTimeout(res, 50));
   }
 

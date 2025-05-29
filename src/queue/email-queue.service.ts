@@ -67,19 +67,15 @@ export class EmailQueueService implements OnModuleInit, OnModuleDestroy {
 
   private async setupQueue(): Promise<void> {
     try {
-      // Declare exchange
       await this.channel.assertExchange(this.exchangeName, 'direct', { durable: true });
-
-      // Declare queue with options for reliability
       await this.channel.assertQueue(this.queueName, {
-        durable: true, // Queue survives broker restarts
+        durable: true,
         arguments: {
-          'x-message-ttl': 24 * 60 * 60 * 1000, // 24 hours TTL
-          'x-max-retries': 3, // Maximum retry attempts
+          'x-message-ttl': 24 * 60 * 60 * 1000,
+          'x-max-retries': 3, 
         }
       });
 
-      // Bind queue to exchange
       await this.channel.bindQueue(this.queueName, this.exchangeName, 'email');
 
       // Set prefetch to process one message at a time
